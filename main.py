@@ -106,7 +106,7 @@ def listar_produtos():
 
 
 def buscar_produtos():
-    nome_buscar = input('Digite o nome do produto: ').lower
+    nome_buscar = input('Digite o nome do produto: ').lower()
 
     for produto in produtos:
         if produto['nome'].lower() == nome_buscar:
@@ -123,7 +123,7 @@ def atualizar_quantidade ():
     nome_buscar = input('Digite o nome do produto').lower()
 
     for produto in produtos:
-        if produto['quantidade'].lower() == nome_buscar:
+        if produto['nome'].lower() == nome_buscar:
             nova_quantidade = int(input('Digite a nova quantidade: '))
             produto['quantidade'] = nova_quantidade
 
@@ -142,14 +142,14 @@ def calcular_estoque():
         valor_produto = produto['preco'] * produto['quantidade']
         total = total + valor_produto
 
-    print(f'Valor total do estoque: R$ {total:2.f}')
+    print(f'Valor total do estoque: R$ {total:.2f}')
 
 
 def excluir_produto():
     nome_buscar = input('Digite o nome do produto que deseja excluir: ').lower()
 
     for produto in produtos:
-        if produtos['nome'].lower() == nome_buscar:
+        if produto['nome'].lower() == nome_buscar:
             produtos.remove(produto)
 
             print('Produto Excluido com Sucesso!!')
@@ -182,7 +182,7 @@ while True:
     elif opcao == '4':
         atualizar_quantidade()
     elif opcao == '5':
-        atualizar_quantidade()
+        calcular_estoque()
     elif opcao == '6':
         excluir_produto()
     elif opcao == '7':

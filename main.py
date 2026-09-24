@@ -45,9 +45,9 @@ def editar_produto():
                 print('Opção Invalida!!')
                 return
 
-        salvar_produtos()
-        print('Produto Atualizado Com Sucesso!!')
-        return
+            salvar_produtos()
+            print('Produto Atualizado Com Sucesso!!')
+            return
 
     print('Produto Não Encontrado!!')
 
@@ -127,10 +127,10 @@ def atualizar_quantidade ():
             nova_quantidade = int(input('Digite a nova quantidade: '))
             produto['quantidade'] = nova_quantidade
 
+            salvar_produtos()
             print('Quantidade atualizada com sucesso!!')
             return
 
-        salvar_produtos()
 
     print('Produto Não Encontrado!!')
 
@@ -153,9 +153,8 @@ def excluir_produto():
             produtos.remove(produto)
 
             print('Produto Excluido com Sucesso!!')
+            salvar_produtos()
             return
-
-    salvar_produtos()
 
     print('Produto Não Encontrado!!')
 

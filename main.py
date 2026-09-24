@@ -15,41 +15,54 @@ def salvar_produtos():
         json.dump(produtos, arquivo, ensure_ascii=False, indent=4)
 
 
+def encontrar_produto(nome):
+    for produto in produtos:
+        if produto['nome'].lower() == nome.strip().lower():
+            return produto
+    return None
+
+
+def exibir_produto(produto):
+    print('------------------')
+    print(f"Nome: {produto['nome']}")
+    print(f"Preco: R$ {produto['preco']:.2f}")
+    print(f"Quantidade: {produto['quantidade']}")
+    print(f"Categoria: {produto['categoria']}")
+
 
 def editar_produto():
-    nome_busca = input('Digite o nome do produto que deseja editar: ').strip().lower()
+    nome_busca = input('Digite o nome do produto que deseja editar: ')
+    produto = encontrar_produto(nome_busca)
 
-    for produto in produtos:
-        if produto['nome'].lower() == nome_busca:
+    if produto is None:
+        print('Produto Não Encontrado!!')
+        return
 
-            print('\n1 - Alterar nome')
-            print('2 - Alterar preço')
-            print('3 - Alterar quantidade')
-            print('4 - Alterar categoria')
+    print('\n1 - Alterar nome')
+    print('2 - Alterar preço')
+    print('3 - Alterar quantidade')
+    print('4 - Alterar categoria')
 
-            opcao = input('Digite a sua opção para alteração: ')
+    opcao = input('Digite a sua opção para alteração: ')
 
-            if opcao == '1':
-                novo_nome = input('Digite o novo nome: ').lower()
-                produto['nome'] = novo_nome
-            elif opcao == '2':
-                novo_preco = float(input('Digite o novo preço: '))
-                produto['preco'] = novo_preco
-            elif opcao == '3':
-                nova_quantidade = int(input('Digite a nova quantidade: '))
-                produto['quantidade'] = nova_quantidade
-            elif opcao == '4':
-                nova_categoria = input('Digite a nova categoria: ')
-                produto['categoria'] = nova_categoria
-            else:
-                print('Opção Invalida!!')
-                return
+    if opcao == '1':
+        novo_nome = input('Digite o novo nome: ').lower()
+        produto['nome'] = novo_nome
+    elif opcao == '2':
+        novo_preco = float(input('Digite o novo preço: '))
+        produto['preco'] = novo_preco
+    elif opcao == '3':
+        nova_quantidade = int(input('Digite a nova quantidade: '))
+        produto['quantidade'] = nova_quantidade
+    elif opcao == '4':
+        nova_categoria = input('Digite a nova categoria: ')
+        produto['categoria'] = nova_categoria
+    else:
+        print('Opção Invalida!!')
+        return
 
-            salvar_produtos()
-            print('Produto Atualizado Com Sucesso!!')
-            return
-
-    print('Produto Não Encontrado!!')
+    salvar_produtos()
+    print('Produto Atualizado Com Sucesso!!')
 
 
 def cadastrar_produtos():
@@ -59,11 +72,9 @@ def cadastrar_produtos():
         print("O nome não pode está vazio")
         return
 
-    for produto in produtos:
-        if produto['nome'].lower() == nome.lower():
-            print('Esse produto já está cadastrado')
-            return
-        
+    if encontrar_produto(nome) is not None:
+        print('Esse produto já está cadastrado')
+        return
 
     try:
         preco = float(input('Preço do Produto: '))
@@ -98,41 +109,33 @@ def cadastrar_produtos():
 
 def listar_produtos():
     for produto in produtos:
-        print('------------------')
-        print('Nome: ',produto['nome'])
-        print('Preco: ',produto['preco'])
-        print('Quantidade: ',produto['quantidade'])
-        print('Categoria: ',produto['categoria'])
+        exibir_produto(produto)
 
 
 def buscar_produtos():
-    nome_buscar = input('Digite o nome do produto: ').lower()
+    nome_buscar = input('Digite o nome do produto: ')
+    produto = encontrar_produto(nome_buscar)
 
-    for produto in produtos:
-        if produto['nome'].lower() == nome_buscar:
-            print('------------------')
-            print('Nome: ',produto['nome'])
-            print('Preco: ',produto['preco'])
-            print('Quantidade: ',produto['quantidade'])
-            print('Categoria: ',produto['categoria'])
-            return
-    print('Produto Não Encontrado!!')
+    if produto is None:
+        print('Produto Não Encontrado!!')
+        return
+
+    exibir_produto(produto)
 
 
-def atualizar_quantidade ():
-    nome_buscar = input('Digite o nome do produto').lower()
+def atualizar_quantidade():
+    nome_buscar = input('Digite o nome do produto: ')
+    produto = encontrar_produto(nome_buscar)
 
-    for produto in produtos:
-        if produto['nome'].lower() == nome_buscar:
-            nova_quantidade = int(input('Digite a nova quantidade: '))
-            produto['quantidade'] = nova_quantidade
+    if produto is None:
+        print('Produto Não Encontrado!!')
+        return
 
-            salvar_produtos()
-            print('Quantidade atualizada com sucesso!!')
-            return
+    nova_quantidade = int(input('Digite a nova quantidade: '))
+    produto['quantidade'] = nova_quantidade
 
-
-    print('Produto Não Encontrado!!')
+    salvar_produtos()
+    print('Quantidade atualizada com sucesso!!')
 
 
 def calcular_estoque():
@@ -146,17 +149,17 @@ def calcular_estoque():
 
 
 def excluir_produto():
-    nome_buscar = input('Digite o nome do produto que deseja excluir: ').lower()
+    nome_buscar = input('Digite o nome do produto que deseja excluir: ')
+    produto = encontrar_produto(nome_buscar)
 
-    for produto in produtos:
-        if produto['nome'].lower() == nome_buscar:
-            produtos.remove(produto)
+    if produto is None:
+        print('Produto Não Encontrado!!')
+        return
 
-            print('Produto Excluido com Sucesso!!')
-            salvar_produtos()
-            return
+    produtos.remove(produto)
 
-    print('Produto Não Encontrado!!')
+    salvar_produtos()
+    print('Produto Excluido com Sucesso!!')
 
 
 while True:

@@ -5,8 +5,8 @@ def carregar_produtos():
         with open('produtos.json', 'r', encoding='utf-8') as arquivo:
             return json.load(arquivo)
 
-    except FileNotFoundError:
-        return[]
+    except (FileNotFoundError, json.JSONDecodeError):
+        return []
 
 produtos = carregar_produtos()
 
@@ -46,17 +46,43 @@ def editar_produto():
     opcao = input('Digite a sua opção para alteração: ')
 
     if opcao == '1':
-        novo_nome = input('Digite o novo nome: ').lower()
+        novo_nome = input('Digite o novo nome: ').strip()
+
+        if novo_nome == '':
+            print('O nome não pode estar vazio.')
+            return
+
+        if encontrar_produto(novo_nome) is not None:
+            print('Já existe um produto com esse nome.')
+            return
+
         produto['nome'] = novo_nome
     elif opcao == '2':
-        novo_preco = float(input('Digite o novo preço: '))
+        try:
+            novo_preco = float(input('Digite o novo preço: '))
+        except ValueError:
+            print('O preço precisa ser um número!!')
+            return
+
+        if novo_preco < 0:
+            print('O preço não pode ser negativo.')
+            return
+
         produto['preco'] = novo_preco
     elif opcao == '3':
-        nova_quantidade = int(input('Digite a nova quantidade: '))
+        try:
+            nova_quantidade = int(input('Digite a nova quantidade: '))
+        except ValueError:
+            print('A quantidade precisa ser um número!!')
+            return
+
+        if nova_quantidade < 0:
+            print('A quantidade não pode ser negativa.')
+            return
+
         produto['quantidade'] = nova_quantidade
     elif opcao == '4':
-        nova_categoria = input('Digite a nova categoria: ')
-        produto['categoria'] = nova_categoria
+        produto['categoria'] = input('Digite a nova categoria: ').strip()
     else:
         print('Opção Invalida!!')
         return
@@ -108,6 +134,10 @@ def cadastrar_produtos():
     print('Produto Cadastrado Com Sucesso!!')
 
 def listar_produtos():
+    if not produtos:
+        print('Nenhum produto cadastrado.')
+        return
+
     for produto in produtos:
         exibir_produto(produto)
 
@@ -131,7 +161,16 @@ def atualizar_quantidade():
         print('Produto Não Encontrado!!')
         return
 
-    nova_quantidade = int(input('Digite a nova quantidade: '))
+    try:
+        nova_quantidade = int(input('Digite a nova quantidade: '))
+    except ValueError:
+        print('A quantidade precisa ser um número!!')
+        return
+
+    if nova_quantidade < 0:
+        print('A quantidade não pode ser negativa.')
+        return
+
     produto['quantidade'] = nova_quantidade
 
     salvar_produtos()
@@ -192,4 +231,6 @@ while True:
     elif opcao == '8':
         print('Sistema Encerrado.')
         break
+    else:
+        print('Opção inválida! Escolha um número de 1 a 8.')
 

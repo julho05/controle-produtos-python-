@@ -130,7 +130,7 @@ def atualizar_quantidade ():
             print('Quantidade atualizada com sucesso!!')
             return
 
-    salvar_produtos()
+        salvar_produtos()
 
     print('Produto Não Encontrado!!')
 

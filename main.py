@@ -177,6 +177,47 @@ def atualizar_quantidade():
     print('Quantidade atualizada com sucesso!!')
 
 
+def movimentar_estoque():
+    nome_buscar = input('Digite o nome do produto: ')
+    produto = encontrar_produto(nome_buscar)
+
+    if produto is None:
+        print('Produto Não Encontrado!!')
+        return
+
+    print(f"\nEstoque atual de {produto['nome']}: {produto['quantidade']}")
+    print('1 - Entrada (chegou mercadoria)')
+    print('2 - Saída (venda ou perda)')
+
+    opcao = input('Digite a sua opção: ')
+
+    if opcao != '1' and opcao != '2':
+        print('Opção Invalida!!')
+        return
+
+    try:
+        quantidade = int(input('Quantidade: '))
+    except ValueError:
+        print('A quantidade precisa ser um número!!')
+        return
+
+    if quantidade <= 0:
+        print('A quantidade precisa ser maior que zero.')
+        return
+
+    if opcao == '1':
+        produto['quantidade'] += quantidade
+    else:
+        if quantidade > produto['quantidade']:
+            print(f"Estoque insuficiente! Disponível: {produto['quantidade']}")
+            return
+
+        produto['quantidade'] -= quantidade
+
+    salvar_produtos()
+    print(f"Movimentação registrada. Estoque atual: {produto['quantidade']}")
+
+
 def calcular_estoque():
     total = 0
 
@@ -210,7 +251,8 @@ while True:
     print('5 - Mostrar valor total do estoque')
     print('6 - Excluir Produto')
     print('7 - Editar Produto')
-    print('8 - Sair')
+    print('8 - Entrada/Saída de estoque')
+    print('9 - Sair')
 
     opcao = input('Informe sua escolha: ')
 
@@ -229,8 +271,10 @@ while True:
     elif opcao == '7':
         editar_produto()
     elif opcao == '8':
+        movimentar_estoque()
+    elif opcao == '9':
         print('Sistema Encerrado.')
         break
     else:
-        print('Opção inválida! Escolha um número de 1 a 8.')
+        print('Opção inválida! Escolha um número de 1 a 9.')
 

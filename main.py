@@ -22,6 +22,11 @@ def encontrar_produto(nome):
     return None
 
 
+def buscar_por_nome(termo):
+    termo = termo.strip().lower()
+    return [produto for produto in produtos if termo in produto['nome'].lower()]
+
+
 def exibir_produto(produto):
     print('------------------')
     print(f"Nome: {produto['nome']}")
@@ -157,14 +162,22 @@ def listar_produtos():
 
 
 def buscar_produtos():
-    nome_buscar = input('Digite o nome do produto: ')
-    produto = encontrar_produto(nome_buscar)
+    termo = input('Digite o nome ou parte do nome do produto: ')
 
-    if produto is None:
+    if termo.strip() == '':
+        print('Digite algum texto para buscar.')
+        return
+
+    encontrados = buscar_por_nome(termo)
+
+    if not encontrados:
         print('Produto Não Encontrado!!')
         return
 
-    exibir_produto(produto)
+    print(f'\n{len(encontrados)} produto(s) encontrado(s):')
+
+    for produto in encontrados:
+        exibir_produto(produto)
 
 
 def atualizar_quantidade():

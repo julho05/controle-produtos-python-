@@ -1,4 +1,5 @@
 import json
+from datetime import datetime
 
 def carregar_produtos():
     try:
@@ -13,6 +14,45 @@ produtos = carregar_produtos()
 def salvar_produtos():
     with open('produtos.json', 'w', encoding='utf-8') as arquivo:
         json.dump(produtos, arquivo, ensure_ascii=False, indent=4)
+
+
+def carregar_historico():
+    try:
+        with open('historico.json', 'r', encoding='utf-8') as arquivo:
+            return json.load(arquivo)
+
+    except (FileNotFoundError, json.JSONDecodeError):
+        return []
+
+
+def registrar_movimentacao(nome, tipo, quantidade, estoque_final):
+    historico = carregar_historico()
+
+    historico.append({
+        'data': datetime.now().strftime('%d/%m/%Y %H:%M'),
+        'produto': nome,
+        'tipo': tipo,
+        'quantidade': quantidade,
+        'estoque_final': estoque_final
+    })
+
+    with open('historico.json', 'w', encoding='utf-8') as arquivo:
+        json.dump(historico, arquivo, ensure_ascii=False, indent=4)
+
+
+def listar_historico():
+    historico = carregar_historico()
+
+    if not historico:
+        print('Nenhuma movimentação registrada.')
+        return
+
+    print('\n--------- HISTÓRICO DE MOVIMENTAÇÕES ---------')
+
+    for registro in historico:
+        print(f"{registro['data']} | {registro['tipo']:7} | "
+              f"{registro['quantidade']:4} un | {registro['produto']} "
+              f"(ficou com {registro['estoque_final']})")
 
 
 def encontrar_produto(nome):
@@ -234,14 +274,18 @@ def movimentar_estoque():
 
     if opcao == '1':
         produto['quantidade'] += quantidade
+        tipo = 'Entrada'
     else:
         if quantidade > produto['quantidade']:
             print(f"Estoque insuficiente! Disponível: {produto['quantidade']}")
             return
 
         produto['quantidade'] -= quantidade
+        tipo = 'Saída'
 
     salvar_produtos()
+    registrar_movimentacao(produto['nome'], tipo, quantidade, produto['quantidade'])
+
     print(f"Movimentação registrada. Estoque atual: {produto['quantidade']}")
 
 
@@ -307,6 +351,7 @@ while True:
     print('7 - Editar Produto')
     print('8 - Entrada/Saída de estoque')
     print('9 - Relatório do estoque')
+    print('10 - Histórico de movimentações')
     print('0 - Sair')
 
     opcao = input('Informe sua escolha: ')
@@ -329,6 +374,8 @@ while True:
         movimentar_estoque()
     elif opcao == '9':
         relatorio_estoque()
+    elif opcao == '10':
+        listar_historico()
     elif opcao == '0':
         print('Sistema Encerrado.')
         break

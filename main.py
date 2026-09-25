@@ -1,19 +1,54 @@
 import json
 from datetime import datetime
 
+
+class Produto:
+    def __init__(self, nome, preco, quantidade, categoria):
+        self.nome = nome
+        self.preco = preco
+        self.quantidade = quantidade
+        self.categoria = categoria
+
+    def valor_total(self):
+        return self.preco * self.quantidade
+
+    def esta_em_falta(self):
+        return self.quantidade < 5
+
+    def to_dict(self):
+        return {
+            'nome': self.nome,
+            'preco': self.preco,
+            'quantidade': self.quantidade,
+            'categoria': self.categoria
+        }
+
+    @staticmethod
+    def from_dict(dados):
+        return Produto(
+            dados['nome'],
+            dados['preco'],
+            dados['quantidade'],
+            dados['categoria']
+        )
+
+
 def carregar_produtos():
     try:
         with open('produtos.json', 'r', encoding='utf-8') as arquivo:
-            return json.load(arquivo)
+            dados = json.load(arquivo)
 
     except (FileNotFoundError, json.JSONDecodeError):
         return []
+
+    return [Produto.from_dict(item) for item in dados]
 
 produtos = carregar_produtos()
 
 def salvar_produtos():
     with open('produtos.json', 'w', encoding='utf-8') as arquivo:
-        json.dump(produtos, arquivo, ensure_ascii=False, indent=4)
+        json.dump([produto.to_dict() for produto in produtos], arquivo,
+                  ensure_ascii=False, indent=4)
 
 
 def carregar_historico():
@@ -57,22 +92,22 @@ def listar_historico():
 
 def encontrar_produto(nome):
     for produto in produtos:
-        if produto['nome'].lower() == nome.strip().lower():
+        if produto.nome.lower() == nome.strip().lower():
             return produto
     return None
 
 
 def buscar_por_nome(termo):
     termo = termo.strip().lower()
-    return [produto for produto in produtos if termo in produto['nome'].lower()]
+    return [produto for produto in produtos if termo in produto.nome.lower()]
 
 
 def exibir_produto(produto):
     print('------------------')
-    print(f"Nome: {produto['nome']}")
-    print(f"Preco: R$ {produto['preco']:.2f}")
-    print(f"Quantidade: {produto['quantidade']}")
-    print(f"Categoria: {produto['categoria']}")
+    print(f"Nome: {produto.nome}")
+    print(f"Preco: R$ {produto.preco:.2f}")
+    print(f"Quantidade: {produto.quantidade}")
+    print(f"Categoria: {produto.categoria}")
 
 
 def editar_produto():
@@ -101,7 +136,7 @@ def editar_produto():
             print('Já existe um produto com esse nome.')
             return
 
-        produto['nome'] = novo_nome
+        produto.nome = novo_nome
     elif opcao == '2':
         try:
             novo_preco = float(input('Digite o novo preço: '))
@@ -113,7 +148,7 @@ def editar_produto():
             print('O preço não pode ser negativo.')
             return
 
-        produto['preco'] = novo_preco
+        produto.preco = novo_preco
     elif opcao == '3':
         try:
             nova_quantidade = int(input('Digite a nova quantidade: '))
@@ -125,9 +160,9 @@ def editar_produto():
             print('A quantidade não pode ser negativa.')
             return
 
-        produto['quantidade'] = nova_quantidade
+        produto.quantidade = nova_quantidade
     elif opcao == '4':
-        produto['categoria'] = input('Digite a nova categoria: ').strip()
+        produto.categoria = input('Digite a nova categoria: ').strip()
     else:
         print('Opção Invalida!!')
         return
@@ -165,14 +200,7 @@ def cadastrar_produtos():
 
     categoria = input('Categoria do Produto: ').strip()
 
-    produto = {
-        'nome' : nome,
-        'preco' : preco,
-        'quantidade' : quantidade,
-        'categoria' : categoria
-    }
-        
-    produtos.append(produto)
+    produtos.append(Produto(nome, preco, quantidade, categoria))
 
     salvar_produtos()
 
@@ -191,11 +219,11 @@ def listar_produtos():
     opcao = input('Digite a sua opção (enter para nome): ')
 
     if opcao == '2':
-        ordenados = sorted(produtos, key=lambda p: p['preco'])
+        ordenados = sorted(produtos, key=lambda p: p.preco)
     elif opcao == '3':
-        ordenados = sorted(produtos, key=lambda p: p['quantidade'])
+        ordenados = sorted(produtos, key=lambda p: p.quantidade)
     else:
-        ordenados = sorted(produtos, key=lambda p: p['nome'].lower())
+        ordenados = sorted(produtos, key=lambda p: p.nome.lower())
 
     for produto in ordenados:
         exibir_produto(produto)
@@ -238,7 +266,7 @@ def atualizar_quantidade():
         print('A quantidade não pode ser negativa.')
         return
 
-    produto['quantidade'] = nova_quantidade
+    produto.quantidade = nova_quantidade
 
     salvar_produtos()
     print('Quantidade atualizada com sucesso!!')
@@ -252,7 +280,7 @@ def movimentar_estoque():
         print('Produto Não Encontrado!!')
         return
 
-    print(f"\nEstoque atual de {produto['nome']}: {produto['quantidade']}")
+    print(f"\nEstoque atual de {produto.nome}: {produto.quantidade}")
     print('1 - Entrada (chegou mercadoria)')
     print('2 - Saída (venda ou perda)')
 
@@ -273,28 +301,24 @@ def movimentar_estoque():
         return
 
     if opcao == '1':
-        produto['quantidade'] += quantidade
+        produto.quantidade += quantidade
         tipo = 'Entrada'
     else:
-        if quantidade > produto['quantidade']:
-            print(f"Estoque insuficiente! Disponível: {produto['quantidade']}")
+        if quantidade > produto.quantidade:
+            print(f"Estoque insuficiente! Disponível: {produto.quantidade}")
             return
 
-        produto['quantidade'] -= quantidade
+        produto.quantidade -= quantidade
         tipo = 'Saída'
 
     salvar_produtos()
-    registrar_movimentacao(produto['nome'], tipo, quantidade, produto['quantidade'])
+    registrar_movimentacao(produto.nome, tipo, quantidade, produto.quantidade)
 
-    print(f"Movimentação registrada. Estoque atual: {produto['quantidade']}")
+    print(f"Movimentação registrada. Estoque atual: {produto.quantidade}")
 
 
 def calcular_estoque():
-    total = 0
-
-    for produto in produtos:
-        valor_produto = produto['preco'] * produto['quantidade']
-        total = total + valor_produto
+    total = sum(produto.valor_total() for produto in produtos)
 
     print(f'Valor total do estoque: R$ {total:.2f}')
 
@@ -304,18 +328,18 @@ def relatorio_estoque():
         print('Nenhum produto cadastrado.')
         return
 
-    total_itens = sum(produto['quantidade'] for produto in produtos)
-    valor_total = sum(produto['preco'] * produto['quantidade'] for produto in produtos)
-    mais_caro = max(produtos, key=lambda p: p['preco'])
-    mais_barato = min(produtos, key=lambda p: p['preco'])
-    estoque_baixo = [produto for produto in produtos if produto['quantidade'] < 5]
+    total_itens = sum(produto.quantidade for produto in produtos)
+    valor_total = sum(produto.valor_total() for produto in produtos)
+    mais_caro = max(produtos, key=lambda p: p.preco)
+    mais_barato = min(produtos, key=lambda p: p.preco)
+    estoque_baixo = [produto for produto in produtos if produto.esta_em_falta()]
 
     print('\n--------- RELATÓRIO DO ESTOQUE ---------')
     print(f'Produtos cadastrados: {len(produtos)}')
     print(f'Itens em estoque: {total_itens}')
     print(f'Valor total: R$ {valor_total:.2f}')
-    print(f"Mais caro: {mais_caro['nome']} (R$ {mais_caro['preco']:.2f})")
-    print(f"Mais barato: {mais_barato['nome']} (R$ {mais_barato['preco']:.2f})")
+    print(f"Mais caro: {mais_caro.nome} (R$ {mais_caro.preco:.2f})")
+    print(f"Mais barato: {mais_barato.nome} (R$ {mais_barato.preco:.2f})")
 
     if not estoque_baixo:
         print('\nNenhum produto com estoque baixo.')
@@ -323,7 +347,7 @@ def relatorio_estoque():
 
     print(f'\nEstoque baixo (menos de 5 unidades):')
     for produto in estoque_baixo:
-        print(f"  - {produto['nome']}: {produto['quantidade']}")
+        print(f"  - {produto.nome}: {produto.quantidade}")
 
 
 def excluir_produto():

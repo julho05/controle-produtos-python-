@@ -138,7 +138,21 @@ def listar_produtos():
         print('Nenhum produto cadastrado.')
         return
 
-    for produto in produtos:
+    print('\nOrdenar por:')
+    print('1 - Nome')
+    print('2 - Preço')
+    print('3 - Quantidade')
+
+    opcao = input('Digite a sua opção (enter para nome): ')
+
+    if opcao == '2':
+        ordenados = sorted(produtos, key=lambda p: p['preco'])
+    elif opcao == '3':
+        ordenados = sorted(produtos, key=lambda p: p['quantidade'])
+    else:
+        ordenados = sorted(produtos, key=lambda p: p['nome'].lower())
+
+    for produto in ordenados:
         exibir_produto(produto)
 
 

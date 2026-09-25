@@ -242,6 +242,33 @@ def calcular_estoque():
     print(f'Valor total do estoque: R$ {total:.2f}')
 
 
+def relatorio_estoque():
+    if not produtos:
+        print('Nenhum produto cadastrado.')
+        return
+
+    total_itens = sum(produto['quantidade'] for produto in produtos)
+    valor_total = sum(produto['preco'] * produto['quantidade'] for produto in produtos)
+    mais_caro = max(produtos, key=lambda p: p['preco'])
+    mais_barato = min(produtos, key=lambda p: p['preco'])
+    estoque_baixo = [produto for produto in produtos if produto['quantidade'] < 5]
+
+    print('\n--------- RELATÓRIO DO ESTOQUE ---------')
+    print(f'Produtos cadastrados: {len(produtos)}')
+    print(f'Itens em estoque: {total_itens}')
+    print(f'Valor total: R$ {valor_total:.2f}')
+    print(f"Mais caro: {mais_caro['nome']} (R$ {mais_caro['preco']:.2f})")
+    print(f"Mais barato: {mais_barato['nome']} (R$ {mais_barato['preco']:.2f})")
+
+    if not estoque_baixo:
+        print('\nNenhum produto com estoque baixo.')
+        return
+
+    print(f'\nEstoque baixo (menos de 5 unidades):')
+    for produto in estoque_baixo:
+        print(f"  - {produto['nome']}: {produto['quantidade']}")
+
+
 def excluir_produto():
     nome_buscar = input('Digite o nome do produto que deseja excluir: ')
     produto = encontrar_produto(nome_buscar)
@@ -266,7 +293,8 @@ while True:
     print('6 - Excluir Produto')
     print('7 - Editar Produto')
     print('8 - Entrada/Saída de estoque')
-    print('9 - Sair')
+    print('9 - Relatório do estoque')
+    print('0 - Sair')
 
     opcao = input('Informe sua escolha: ')
 
@@ -287,8 +315,10 @@ while True:
     elif opcao == '8':
         movimentar_estoque()
     elif opcao == '9':
+        relatorio_estoque()
+    elif opcao == '0':
         print('Sistema Encerrado.')
         break
     else:
-        print('Opção inválida! Escolha um número de 1 a 9.')
+        print('Opção inválida! Escolha um número de 0 a 9.')
 

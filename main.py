@@ -33,22 +33,73 @@ class Produto:
         )
 
 
-def carregar_produtos():
-    try:
-        with open('produtos.json', 'r', encoding='utf-8') as arquivo:
-            dados = json.load(arquivo)
+class Estoque:
+    def __init__(self, arquivo='produtos.json'):
+        self.arquivo = arquivo
+        self.produtos = self.carregar()
 
-    except (FileNotFoundError, json.JSONDecodeError):
-        return []
+    def carregar(self):
+        try:
+            with open(self.arquivo, 'r', encoding='utf-8') as arquivo:
+                dados = json.load(arquivo)
 
-    return [Produto.from_dict(item) for item in dados]
+        except (FileNotFoundError, json.JSONDecodeError):
+            return []
 
-produtos = carregar_produtos()
+        return [Produto.from_dict(item) for item in dados]
 
-def salvar_produtos():
-    with open('produtos.json', 'w', encoding='utf-8') as arquivo:
-        json.dump([produto.to_dict() for produto in produtos], arquivo,
-                  ensure_ascii=False, indent=4)
+    def salvar(self):
+        with open(self.arquivo, 'w', encoding='utf-8') as arquivo:
+            json.dump([produto.to_dict() for produto in self.produtos], arquivo,
+                      ensure_ascii=False, indent=4)
+
+    def esta_vazio(self):
+        return len(self.produtos) == 0
+
+    def encontrar(self, nome):
+        for produto in self.produtos:
+            if produto.nome.lower() == nome.strip().lower():
+                return produto
+        return None
+
+    def buscar(self, termo):
+        termo = termo.strip().lower()
+        return [produto for produto in self.produtos if termo in produto.nome.lower()]
+
+    def adicionar(self, produto):
+        self.produtos.append(produto)
+        self.salvar()
+
+    def remover(self, produto):
+        self.produtos.remove(produto)
+        self.salvar()
+
+    def ordenados_por(self, criterio):
+        if criterio == 'preco':
+            return sorted(self.produtos, key=lambda p: p.preco)
+
+        if criterio == 'quantidade':
+            return sorted(self.produtos, key=lambda p: p.quantidade)
+
+        return sorted(self.produtos, key=lambda p: p.nome.lower())
+
+    def valor_total(self):
+        return sum(produto.valor_total() for produto in self.produtos)
+
+    def total_itens(self):
+        return sum(produto.quantidade for produto in self.produtos)
+
+    def mais_caro(self):
+        return max(self.produtos, key=lambda p: p.preco)
+
+    def mais_barato(self):
+        return min(self.produtos, key=lambda p: p.preco)
+
+    def em_falta(self):
+        return [produto for produto in self.produtos if produto.esta_em_falta()]
+
+
+estoque = Estoque()
 
 
 def carregar_historico():
@@ -90,18 +141,6 @@ def listar_historico():
               f"(ficou com {registro['estoque_final']})")
 
 
-def encontrar_produto(nome):
-    for produto in produtos:
-        if produto.nome.lower() == nome.strip().lower():
-            return produto
-    return None
-
-
-def buscar_por_nome(termo):
-    termo = termo.strip().lower()
-    return [produto for produto in produtos if termo in produto.nome.lower()]
-
-
 def exibir_produto(produto):
     print('------------------')
     print(f"Nome: {produto.nome}")
@@ -112,7 +151,7 @@ def exibir_produto(produto):
 
 def editar_produto():
     nome_busca = input('Digite o nome do produto que deseja editar: ')
-    produto = encontrar_produto(nome_busca)
+    produto = estoque.encontrar(nome_busca)
 
     if produto is None:
         print('Produto Não Encontrado!!')
@@ -132,7 +171,7 @@ def editar_produto():
             print('O nome não pode estar vazio.')
             return
 
-        if encontrar_produto(novo_nome) is not None:
+        if estoque.encontrar(novo_nome) is not None:
             print('Já existe um produto com esse nome.')
             return
 
@@ -167,7 +206,7 @@ def editar_produto():
         print('Opção Invalida!!')
         return
 
-    salvar_produtos()
+    estoque.salvar()
     print('Produto Atualizado Com Sucesso!!')
 
 
@@ -178,7 +217,7 @@ def cadastrar_produtos():
         print("O nome não pode está vazio")
         return
 
-    if encontrar_produto(nome) is not None:
+    if estoque.encontrar(nome) is not None:
         print('Esse produto já está cadastrado')
         return
 
@@ -200,14 +239,12 @@ def cadastrar_produtos():
 
     categoria = input('Categoria do Produto: ').strip()
 
-    produtos.append(Produto(nome, preco, quantidade, categoria))
-
-    salvar_produtos()
+    estoque.adicionar(Produto(nome, preco, quantidade, categoria))
 
     print('Produto Cadastrado Com Sucesso!!')
 
 def listar_produtos():
-    if not produtos:
+    if estoque.esta_vazio():
         print('Nenhum produto cadastrado.')
         return
 
@@ -219,11 +256,11 @@ def listar_produtos():
     opcao = input('Digite a sua opção (enter para nome): ')
 
     if opcao == '2':
-        ordenados = sorted(produtos, key=lambda p: p.preco)
+        ordenados = estoque.ordenados_por('preco')
     elif opcao == '3':
-        ordenados = sorted(produtos, key=lambda p: p.quantidade)
+        ordenados = estoque.ordenados_por('quantidade')
     else:
-        ordenados = sorted(produtos, key=lambda p: p.nome.lower())
+        ordenados = estoque.ordenados_por('nome')
 
     for produto in ordenados:
         exibir_produto(produto)
@@ -236,7 +273,7 @@ def buscar_produtos():
         print('Digite algum texto para buscar.')
         return
 
-    encontrados = buscar_por_nome(termo)
+    encontrados = estoque.buscar(termo)
 
     if not encontrados:
         print('Produto Não Encontrado!!')
@@ -250,7 +287,7 @@ def buscar_produtos():
 
 def atualizar_quantidade():
     nome_buscar = input('Digite o nome do produto: ')
-    produto = encontrar_produto(nome_buscar)
+    produto = estoque.encontrar(nome_buscar)
 
     if produto is None:
         print('Produto Não Encontrado!!')
@@ -268,13 +305,13 @@ def atualizar_quantidade():
 
     produto.quantidade = nova_quantidade
 
-    salvar_produtos()
+    estoque.salvar()
     print('Quantidade atualizada com sucesso!!')
 
 
 def movimentar_estoque():
     nome_buscar = input('Digite o nome do produto: ')
-    produto = encontrar_produto(nome_buscar)
+    produto = estoque.encontrar(nome_buscar)
 
     if produto is None:
         print('Produto Não Encontrado!!')
@@ -311,33 +348,29 @@ def movimentar_estoque():
         produto.quantidade -= quantidade
         tipo = 'Saída'
 
-    salvar_produtos()
+    estoque.salvar()
     registrar_movimentacao(produto.nome, tipo, quantidade, produto.quantidade)
 
     print(f"Movimentação registrada. Estoque atual: {produto.quantidade}")
 
 
 def calcular_estoque():
-    total = sum(produto.valor_total() for produto in produtos)
-
-    print(f'Valor total do estoque: R$ {total:.2f}')
+    print(f'Valor total do estoque: R$ {estoque.valor_total():.2f}')
 
 
 def relatorio_estoque():
-    if not produtos:
+    if estoque.esta_vazio():
         print('Nenhum produto cadastrado.')
         return
 
-    total_itens = sum(produto.quantidade for produto in produtos)
-    valor_total = sum(produto.valor_total() for produto in produtos)
-    mais_caro = max(produtos, key=lambda p: p.preco)
-    mais_barato = min(produtos, key=lambda p: p.preco)
-    estoque_baixo = [produto for produto in produtos if produto.esta_em_falta()]
+    mais_caro = estoque.mais_caro()
+    mais_barato = estoque.mais_barato()
+    estoque_baixo = estoque.em_falta()
 
     print('\n--------- RELATÓRIO DO ESTOQUE ---------')
-    print(f'Produtos cadastrados: {len(produtos)}')
-    print(f'Itens em estoque: {total_itens}')
-    print(f'Valor total: R$ {valor_total:.2f}')
+    print(f'Produtos cadastrados: {len(estoque.produtos)}')
+    print(f'Itens em estoque: {estoque.total_itens()}')
+    print(f'Valor total: R$ {estoque.valor_total():.2f}')
     print(f"Mais caro: {mais_caro.nome} (R$ {mais_caro.preco:.2f})")
     print(f"Mais barato: {mais_barato.nome} (R$ {mais_barato.preco:.2f})")
 
@@ -352,15 +385,14 @@ def relatorio_estoque():
 
 def excluir_produto():
     nome_buscar = input('Digite o nome do produto que deseja excluir: ')
-    produto = encontrar_produto(nome_buscar)
+    produto = estoque.encontrar(nome_buscar)
 
     if produto is None:
         print('Produto Não Encontrado!!')
         return
 
-    produtos.remove(produto)
+    estoque.remover(produto)
 
-    salvar_produtos()
     print('Produto Excluido com Sucesso!!')
 
 

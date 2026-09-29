@@ -99,43 +99,73 @@ class Estoque:
         return [produto for produto in self.produtos if produto.esta_em_falta()]
 
 
-def carregar_historico():
-    try:
-        with open('historico.json', 'r', encoding='utf-8') as arquivo:
-            return json.load(arquivo)
+class Movimentacao:
+    def __init__(self, produto, tipo, quantidade, estoque_final, data=None):
+        self.produto = produto
+        self.tipo = tipo
+        self.quantidade = quantidade
+        self.estoque_final = estoque_final
+        self.data = data or datetime.now().strftime('%d/%m/%Y %H:%M')
 
-    except (FileNotFoundError, json.JSONDecodeError):
-        return []
+    def to_dict(self):
+        return {
+            'data': self.data,
+            'produto': self.produto,
+            'tipo': self.tipo,
+            'quantidade': self.quantidade,
+            'estoque_final': self.estoque_final
+        }
+
+    @staticmethod
+    def from_dict(dados):
+        return Movimentacao(
+            dados['produto'],
+            dados['tipo'],
+            dados['quantidade'],
+            dados['estoque_final'],
+            dados['data']
+        )
 
 
-def registrar_movimentacao(nome, tipo, quantidade, estoque_final):
-    historico = carregar_historico()
+class Historico:
+    def __init__(self, arquivo='historico.json'):
+        self.arquivo = arquivo
+        self.movimentacoes = self.carregar()
 
-    historico.append({
-        'data': datetime.now().strftime('%d/%m/%Y %H:%M'),
-        'produto': nome,
-        'tipo': tipo,
-        'quantidade': quantidade,
-        'estoque_final': estoque_final
-    })
+    def carregar(self):
+        try:
+            with open(self.arquivo, 'r', encoding='utf-8') as arquivo:
+                dados = json.load(arquivo)
 
-    with open('historico.json', 'w', encoding='utf-8') as arquivo:
-        json.dump(historico, arquivo, ensure_ascii=False, indent=4)
+        except (FileNotFoundError, json.JSONDecodeError):
+            return []
+
+        return [Movimentacao.from_dict(item) for item in dados]
+
+    def salvar(self):
+        with open(self.arquivo, 'w', encoding='utf-8') as arquivo:
+            json.dump([movimentacao.to_dict() for movimentacao in self.movimentacoes],
+                      arquivo, ensure_ascii=False, indent=4)
+
+    def esta_vazio(self):
+        return len(self.movimentacoes) == 0
+
+    def registrar(self, movimentacao):
+        self.movimentacoes.append(movimentacao)
+        self.salvar()
 
 
-def listar_historico():
-    historico = carregar_historico()
-
-    if not historico:
+def listar_historico(historico):
+    if historico.esta_vazio():
         print('Nenhuma movimentação registrada.')
         return
 
     print('\n--------- HISTÓRICO DE MOVIMENTAÇÕES ---------')
 
-    for registro in historico:
-        print(f"{registro['data']} | {registro['tipo']:7} | "
-              f"{registro['quantidade']:4} un | {registro['produto']} "
-              f"(ficou com {registro['estoque_final']})")
+    for movimentacao in historico.movimentacoes:
+        print(f"{movimentacao.data} | {movimentacao.tipo:7} | "
+              f"{movimentacao.quantidade:4} un | {movimentacao.produto} "
+              f"(ficou com {movimentacao.estoque_final})")
 
 
 def exibir_produto(produto):
@@ -306,7 +336,7 @@ def atualizar_quantidade(estoque):
     print('Quantidade atualizada com sucesso!!')
 
 
-def movimentar_estoque(estoque):
+def movimentar_estoque(estoque, historico):
     nome_buscar = input('Digite o nome do produto: ')
     produto = estoque.encontrar(nome_buscar)
 
@@ -346,7 +376,8 @@ def movimentar_estoque(estoque):
         tipo = 'Saída'
 
     estoque.salvar()
-    registrar_movimentacao(produto.nome, tipo, quantidade, produto.quantidade)
+    historico.registrar(
+        Movimentacao(produto.nome, tipo, quantidade, produto.quantidade))
 
     print(f"Movimentação registrada. Estoque atual: {produto.quantidade}")
 
@@ -395,6 +426,7 @@ def excluir_produto(estoque):
 
 def main():
     estoque = Estoque()
+    historico = Historico()
 
     while True:
         print('---------CONTROLE DE PRODUTOS---------')
@@ -427,11 +459,11 @@ def main():
         elif opcao == '7':
             editar_produto(estoque)
         elif opcao == '8':
-            movimentar_estoque(estoque)
+            movimentar_estoque(estoque, historico)
         elif opcao == '9':
             relatorio_estoque(estoque)
         elif opcao == '10':
-            listar_historico()
+            listar_historico(historico)
         elif opcao == '0':
             print('Sistema Encerrado.')
             break

@@ -99,9 +99,6 @@ class Estoque:
         return [produto for produto in self.produtos if produto.esta_em_falta()]
 
 
-estoque = Estoque()
-
-
 def carregar_historico():
     try:
         with open('historico.json', 'r', encoding='utf-8') as arquivo:
@@ -149,7 +146,7 @@ def exibir_produto(produto):
     print(f"Categoria: {produto.categoria}")
 
 
-def editar_produto():
+def editar_produto(estoque):
     nome_busca = input('Digite o nome do produto que deseja editar: ')
     produto = estoque.encontrar(nome_busca)
 
@@ -210,7 +207,7 @@ def editar_produto():
     print('Produto Atualizado Com Sucesso!!')
 
 
-def cadastrar_produtos():
+def cadastrar_produtos(estoque):
     nome = input('Nome do Produto: ').strip()
 
     if nome == '':
@@ -243,7 +240,7 @@ def cadastrar_produtos():
 
     print('Produto Cadastrado Com Sucesso!!')
 
-def listar_produtos():
+def listar_produtos(estoque):
     if estoque.esta_vazio():
         print('Nenhum produto cadastrado.')
         return
@@ -266,7 +263,7 @@ def listar_produtos():
         exibir_produto(produto)
 
 
-def buscar_produtos():
+def buscar_produtos(estoque):
     termo = input('Digite o nome ou parte do nome do produto: ')
 
     if termo.strip() == '':
@@ -285,7 +282,7 @@ def buscar_produtos():
         exibir_produto(produto)
 
 
-def atualizar_quantidade():
+def atualizar_quantidade(estoque):
     nome_buscar = input('Digite o nome do produto: ')
     produto = estoque.encontrar(nome_buscar)
 
@@ -309,7 +306,7 @@ def atualizar_quantidade():
     print('Quantidade atualizada com sucesso!!')
 
 
-def movimentar_estoque():
+def movimentar_estoque(estoque):
     nome_buscar = input('Digite o nome do produto: ')
     produto = estoque.encontrar(nome_buscar)
 
@@ -354,11 +351,11 @@ def movimentar_estoque():
     print(f"Movimentação registrada. Estoque atual: {produto.quantidade}")
 
 
-def calcular_estoque():
+def calcular_estoque(estoque):
     print(f'Valor total do estoque: R$ {estoque.valor_total():.2f}')
 
 
-def relatorio_estoque():
+def relatorio_estoque(estoque):
     if estoque.esta_vazio():
         print('Nenhum produto cadastrado.')
         return
@@ -383,7 +380,7 @@ def relatorio_estoque():
         print(f"  - {produto.nome}: {produto.quantidade}")
 
 
-def excluir_produto():
+def excluir_produto(estoque):
     nome_buscar = input('Digite o nome do produto que deseja excluir: ')
     produto = estoque.encontrar(nome_buscar)
 
@@ -396,45 +393,51 @@ def excluir_produto():
     print('Produto Excluido com Sucesso!!')
 
 
-while True:
-    print('---------CONTROLE DE PRODUTOS---------')
-    print('1 - Cadastrar produtos')
-    print('2 - Listar produtos')
-    print('3 - Buscar produtos')
-    print('4 - Atualizar quantidade')
-    print('5 - Mostrar valor total do estoque')
-    print('6 - Excluir Produto')
-    print('7 - Editar Produto')
-    print('8 - Entrada/Saída de estoque')
-    print('9 - Relatório do estoque')
-    print('10 - Histórico de movimentações')
-    print('0 - Sair')
+def main():
+    estoque = Estoque()
 
-    opcao = input('Informe sua escolha: ')
+    while True:
+        print('---------CONTROLE DE PRODUTOS---------')
+        print('1 - Cadastrar produtos')
+        print('2 - Listar produtos')
+        print('3 - Buscar produtos')
+        print('4 - Atualizar quantidade')
+        print('5 - Mostrar valor total do estoque')
+        print('6 - Excluir Produto')
+        print('7 - Editar Produto')
+        print('8 - Entrada/Saída de estoque')
+        print('9 - Relatório do estoque')
+        print('10 - Histórico de movimentações')
+        print('0 - Sair')
 
-    if opcao == '1':
-        cadastrar_produtos()
-    elif opcao == '2':
-        listar_produtos()
-    elif opcao == '3':
-        buscar_produtos()
-    elif opcao == '4':
-        atualizar_quantidade()
-    elif opcao == '5':
-        calcular_estoque()
-    elif opcao == '6':
-        excluir_produto()
-    elif opcao == '7':
-        editar_produto()
-    elif opcao == '8':
-        movimentar_estoque()
-    elif opcao == '9':
-        relatorio_estoque()
-    elif opcao == '10':
-        listar_historico()
-    elif opcao == '0':
-        print('Sistema Encerrado.')
-        break
-    else:
-        print('Opção inválida! Escolha um número de 0 a 9.')
+        opcao = input('Informe sua escolha: ')
 
+        if opcao == '1':
+            cadastrar_produtos(estoque)
+        elif opcao == '2':
+            listar_produtos(estoque)
+        elif opcao == '3':
+            buscar_produtos(estoque)
+        elif opcao == '4':
+            atualizar_quantidade(estoque)
+        elif opcao == '5':
+            calcular_estoque(estoque)
+        elif opcao == '6':
+            excluir_produto(estoque)
+        elif opcao == '7':
+            editar_produto(estoque)
+        elif opcao == '8':
+            movimentar_estoque(estoque)
+        elif opcao == '9':
+            relatorio_estoque(estoque)
+        elif opcao == '10':
+            listar_historico()
+        elif opcao == '0':
+            print('Sistema Encerrado.')
+            break
+        else:
+            print('Opção inválida! Escolha um número de 0 a 9.')
+
+
+if __name__ == '__main__':
+    main()

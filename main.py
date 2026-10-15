@@ -6,8 +6,38 @@ class Produto:
     def __init__(self, nome, preco, quantidade, categoria):
         self.nome = nome
         self.preco = preco
-        self.quantidade = quantidade
+        self._quantidade = quantidade
         self.categoria = categoria
+
+    @property
+    def quantidade(self):
+        return self._quantidade
+
+    def entrada(self, quantidade):
+        if quantidade <= 0:
+            raise ValueError('A quantidade precisa ser maior que zero.')
+
+        self._quantidade += quantidade
+        return quantidade
+
+    def saida(self, quantidade):
+        if quantidade <= 0:
+            raise ValueError('A quantidade precisa ser maior que zero.')
+
+        if quantidade > self._quantidade:
+            raise ValueError(
+                f'Estoque insuficiente! Disponível: {self._quantidade}')
+
+        self._quantidade -= quantidade
+        return quantidade
+
+    def ajustar(self, novo_total):
+        if novo_total < 0:
+            raise ValueError('A quantidade não pode ser negativa.')
+
+        diferenca = novo_total - self._quantidade
+        self._quantidade = novo_total
+        return diferenca
 
     def valor_total(self):
         return self.preco * self.quantidade
@@ -34,7 +64,8 @@ class Produto:
 
 
 class Estoque:
-    def __init__(self, arquivo='produtos.json'):
+    def __init__(self, historico, arquivo='produtos.json'):
+        self.historico = historico
         self.arquivo = arquivo
         self.produtos = self.carregar()
 
@@ -69,6 +100,22 @@ class Estoque:
     def adicionar(self, produto):
         self.produtos.append(produto)
         self.salvar()
+
+        if produto.quantidade > 0:
+            self.historico.registrar(Movimentacao(
+                produto.nome, 'Entrada', produto.quantidade, produto.quantidade))
+
+    def movimentar(self, produto, tipo, quantidade):
+        if tipo == 'Entrada':
+            registrado = produto.entrada(quantidade)
+        elif tipo == 'Saída':
+            registrado = produto.saida(quantidade)
+        else:
+            registrado = produto.ajustar(quantidade)
+
+        self.salvar()
+        self.historico.registrar(
+            Movimentacao(produto.nome, tipo, registrado, produto.quantidade))
 
     def remover(self, produto):
         self.produtos.remove(produto)
@@ -186,8 +233,7 @@ def editar_produto(estoque):
 
     print('\n1 - Alterar nome')
     print('2 - Alterar preço')
-    print('3 - Alterar quantidade')
-    print('4 - Alterar categoria')
+    print('3 - Alterar categoria')
 
     opcao = input('Digite a sua opção para alteração: ')
 
@@ -216,18 +262,6 @@ def editar_produto(estoque):
 
         produto.preco = novo_preco
     elif opcao == '3':
-        try:
-            nova_quantidade = int(input('Digite a nova quantidade: '))
-        except ValueError:
-            print('A quantidade precisa ser um número!!')
-            return
-
-        if nova_quantidade < 0:
-            print('A quantidade não pode ser negativa.')
-            return
-
-        produto.quantidade = nova_quantidade
-    elif opcao == '4':
         produto.categoria = input('Digite a nova categoria: ').strip()
     else:
         print('Opção Invalida!!')
@@ -312,31 +346,7 @@ def buscar_produtos(estoque):
         exibir_produto(produto)
 
 
-def atualizar_quantidade(estoque):
-    nome_buscar = input('Digite o nome do produto: ')
-    produto = estoque.encontrar(nome_buscar)
-
-    if produto is None:
-        print('Produto Não Encontrado!!')
-        return
-
-    try:
-        nova_quantidade = int(input('Digite a nova quantidade: '))
-    except ValueError:
-        print('A quantidade precisa ser um número!!')
-        return
-
-    if nova_quantidade < 0:
-        print('A quantidade não pode ser negativa.')
-        return
-
-    produto.quantidade = nova_quantidade
-
-    estoque.salvar()
-    print('Quantidade atualizada com sucesso!!')
-
-
-def movimentar_estoque(estoque, historico):
+def movimentar_estoque(estoque):
     nome_buscar = input('Digite o nome do produto: ')
     produto = estoque.encontrar(nome_buscar)
 
@@ -347,37 +357,32 @@ def movimentar_estoque(estoque, historico):
     print(f"\nEstoque atual de {produto.nome}: {produto.quantidade}")
     print('1 - Entrada (chegou mercadoria)')
     print('2 - Saída (venda ou perda)')
+    print('3 - Ajuste (corrigir o saldo depois de uma contagem)')
+
+    tipos = {'1': 'Entrada', '2': 'Saída', '3': 'Ajuste'}
 
     opcao = input('Digite a sua opção: ')
 
-    if opcao != '1' and opcao != '2':
+    if opcao not in tipos:
         print('Opção Invalida!!')
         return
 
+    if opcao == '3':
+        pergunta = 'Quantidade contada em estoque: '
+    else:
+        pergunta = 'Quantidade: '
+
     try:
-        quantidade = int(input('Quantidade: '))
+        quantidade = int(input(pergunta))
     except ValueError:
         print('A quantidade precisa ser um número!!')
         return
 
-    if quantidade <= 0:
-        print('A quantidade precisa ser maior que zero.')
+    try:
+        estoque.movimentar(produto, tipos[opcao], quantidade)
+    except ValueError as erro:
+        print(erro)
         return
-
-    if opcao == '1':
-        produto.quantidade += quantidade
-        tipo = 'Entrada'
-    else:
-        if quantidade > produto.quantidade:
-            print(f"Estoque insuficiente! Disponível: {produto.quantidade}")
-            return
-
-        produto.quantidade -= quantidade
-        tipo = 'Saída'
-
-    estoque.salvar()
-    historico.registrar(
-        Movimentacao(produto.nome, tipo, quantidade, produto.quantidade))
 
     print(f"Movimentação registrada. Estoque atual: {produto.quantidade}")
 
@@ -425,21 +430,20 @@ def excluir_produto(estoque):
 
 
 def main():
-    estoque = Estoque()
     historico = Historico()
+    estoque = Estoque(historico)
 
     while True:
         print('---------CONTROLE DE PRODUTOS---------')
         print('1 - Cadastrar produtos')
         print('2 - Listar produtos')
         print('3 - Buscar produtos')
-        print('4 - Atualizar quantidade')
+        print('4 - Entrada/Saída/Ajuste de estoque')
         print('5 - Mostrar valor total do estoque')
         print('6 - Excluir Produto')
         print('7 - Editar Produto')
-        print('8 - Entrada/Saída de estoque')
-        print('9 - Relatório do estoque')
-        print('10 - Histórico de movimentações')
+        print('8 - Relatório do estoque')
+        print('9 - Histórico de movimentações')
         print('0 - Sair')
 
         opcao = input('Informe sua escolha: ')
@@ -451,7 +455,7 @@ def main():
         elif opcao == '3':
             buscar_produtos(estoque)
         elif opcao == '4':
-            atualizar_quantidade(estoque)
+            movimentar_estoque(estoque)
         elif opcao == '5':
             calcular_estoque(estoque)
         elif opcao == '6':
@@ -459,10 +463,8 @@ def main():
         elif opcao == '7':
             editar_produto(estoque)
         elif opcao == '8':
-            movimentar_estoque(estoque, historico)
-        elif opcao == '9':
             relatorio_estoque(estoque)
-        elif opcao == '10':
+        elif opcao == '9':
             listar_historico(historico)
         elif opcao == '0':
             print('Sistema Encerrado.')

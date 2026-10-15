@@ -26,13 +26,12 @@ Não há dependências para instalar.
 1 - Cadastrar produtos
 2 - Listar produtos
 3 - Buscar produtos
-4 - Atualizar quantidade
+4 - Entrada/Saída/Ajuste de estoque
 5 - Mostrar valor total do estoque
 6 - Excluir Produto
 7 - Editar Produto
-8 - Entrada/Saída de estoque
-9 - Relatório do estoque
-10 - Histórico de movimentações
+8 - Relatório do estoque
+9 - Histórico de movimentações
 0 - Sair
 ```
 
@@ -51,9 +50,26 @@ de mexer no produto errado.
 **Listagem ordenável**
 Ordena por nome, preço ou quantidade.
 
-**Entrada e saída de estoque**
+**Entrada, saída e ajuste de estoque**
 Em vez de informar o total final, você registra o movimento: chegaram 20, vendi 3.
 Saídas maiores que o estoque disponível são recusadas.
+
+Quando a contagem física discorda do sistema, o ajuste corrige o saldo e fica
+registrado como tal, com a diferença aplicada:
+
+```
+29/09/2026 17:01 | Ajuste  |  -13 un | Arroz (ficou com 12)
+```
+
+**A quantidade só muda por movimento**
+Não existe caminho para alterar a quantidade sem deixar registro. O cadastro de
+um produto com saldo inicial já entra como uma entrada, e o editar não mexe em
+quantidade — só em nome, preço e categoria. Por isso vale a regra de que a soma
+dos movimentos de um produto é igual ao saldo dele.
+
+Na prática isso significa que o histórico pode ser usado para conferir o
+estoque, o que antes não era verdade: existiam dois outros caminhos que
+alteravam a quantidade em silêncio.
 
 **Relatório**
 Total de produtos, itens em estoque, valor total, produto mais caro, mais barato
@@ -107,9 +123,14 @@ requests pequenos, um assunto por vez:
 
 ## Próximos passos
 
-- Reorganizar em classes (`Produto` e `Estoque`)
-- Testes automatizados com pytest
-- Trocar o JSON por SQLite
+- Impedir que renomear um produto deixe o histórico dele órfão
+- Mover as validações de preço e quantidade para dentro do `Produto`, hoje
+  duplicadas entre o cadastro e a edição
+- Testes automatizados com pytest, começando pela regra de que a soma dos
+  movimentos fecha com o saldo
+- Separar o `main.py` em módulos, quando o arquivo começar a incomodar
+- Trocar o JSON por SQLite, como exercício de SQL — hoje o JSON dá conta do
+  volume, então isso vale pelo aprendizado, não por necessidade
 
 ## Tecnologias
 

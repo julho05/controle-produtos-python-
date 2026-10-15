@@ -40,7 +40,11 @@ Não há dependências para instalar.
 **Cadastro e edição**
 Cada produto guarda nome, preço, quantidade e categoria. O sistema recusa nome
 vazio, nome já cadastrado, preço ou quantidade negativos e valores que não sejam
-números tanto no cadastro quanto na edição.
+números tanto no cadastro quanto na edição. As regras ficam dentro do `Produto`,
+então não há como criar ou editar um produto inválido por nenhum caminho.
+
+Preço pode ser digitado do jeito brasileiro: `2,50` e `2.50` valem a mesma
+coisa. Produto cadastrado sem categoria entra como "Sem categoria".
 
 **Busca por parte do nome**
 Com "Caneta Azul" e "Caneta Preta" cadastradas, buscar `caneta` retorna as duas.
@@ -48,7 +52,7 @@ Já as operações que alteram ou apagam exigem o nome exato, para não haver ri
 de mexer no produto errado.
 
 **Listagem ordenável**
-Ordena por nome, preço ou quantidade.
+Ordena por nome, preço, quantidade ou categoria.
 
 **Entrada, saída e ajuste de estoque**
 Em vez de informar o total final, você registra o movimento: chegaram 20, vendi 3.
@@ -72,8 +76,8 @@ estoque, o que antes não era verdade: existiam dois outros caminhos que
 alteravam a quantidade em silêncio.
 
 **Relatório**
-Total de produtos, itens em estoque, valor total, produto mais caro, mais barato
-e alerta de itens com menos de 5 unidades.
+Total de produtos, itens em estoque, valor total, produto mais caro, mais
+barato, a quebra por categoria e o alerta de itens com menos de 5 unidades.
 
 ```
 --------- RELATÓRIO DO ESTOQUE ---------
@@ -82,6 +86,10 @@ Itens em estoque: 65
 Valor total: R$ 574.70
 Mais caro: Mochila (R$ 89.90)
 Mais barato: caneta (R$ 2.50)
+
+Por categoria:
+  - Bolsas: 1 produto(s), 3 itens, R$ 269.70
+  - Material: 2 produto(s), 62 itens, R$ 305.00
 
 Estoque baixo (menos de 5 unidades):
   - Mochila: 3
@@ -94,6 +102,11 @@ Toda entrada e saída fica registrada com data e hora.
 25/09/2026 16:33 | Entrada |   20 un | Caneta Azul (ficou com 30)
 25/09/2026 16:33 | Saída   |    5 un | Caneta Azul (ficou com 25)
 ```
+
+No arquivo a data é gravada em ISO (`2026-09-25T16:33`) e formatada só na hora
+de exibir, para que mais tarde dê para ordenar e filtrar por período sem
+precisar reinterpretar texto. Históricos gravados no formato antigo continuam
+sendo exibidos normalmente.
 
 ## Arquivos
 
@@ -128,8 +141,6 @@ requests pequenos, um assunto por vez:
 ## Próximos passos
 
 - Impedir que renomear um produto deixe o histórico dele órfão
-- Mover as validações de preço e quantidade para dentro do `Produto`, hoje
-  duplicadas entre o cadastro e a edição
 - Testes automatizados com pytest, começando pela regra de que a soma dos
   movimentos fecha com o saldo
 - Separar o `main.py` em módulos, quando o arquivo começar a incomodar

@@ -1,5 +1,24 @@
 import json
+import os
 from datetime import datetime
+
+
+def salvar_json(caminho, dados):
+    temporario = f'{caminho}.tmp'
+
+    with open(temporario, 'w', encoding='utf-8') as arquivo:
+        json.dump(dados, arquivo, ensure_ascii=False, indent=4)
+
+    os.replace(temporario, caminho)
+
+
+def carregar_json(caminho):
+    try:
+        with open(caminho, 'r', encoding='utf-8') as arquivo:
+            return json.load(arquivo)
+
+    except (FileNotFoundError, json.JSONDecodeError):
+        return []
 
 
 class Produto:
@@ -71,18 +90,17 @@ class Estoque:
 
     def carregar(self):
         try:
-            with open(self.arquivo, 'r', encoding='utf-8') as arquivo:
-                dados = json.load(arquivo)
+            return [Produto.from_dict(item)
+                    for item in carregar_json(self.arquivo)]
 
-        except (FileNotFoundError, json.JSONDecodeError):
+        except (KeyError, TypeError, ValueError, AttributeError):
+            print(f'O arquivo {self.arquivo} está corrompido. '
+                  'Iniciando com o estoque vazio.')
             return []
 
-        return [Produto.from_dict(item) for item in dados]
-
     def salvar(self):
-        with open(self.arquivo, 'w', encoding='utf-8') as arquivo:
-            json.dump([produto.to_dict() for produto in self.produtos], arquivo,
-                      ensure_ascii=False, indent=4)
+        salvar_json(self.arquivo,
+                    [produto.to_dict() for produto in self.produtos])
 
     def esta_vazio(self):
         return len(self.produtos) == 0
@@ -110,8 +128,10 @@ class Estoque:
             registrado = produto.entrada(quantidade)
         elif tipo == 'Saída':
             registrado = produto.saida(quantidade)
-        else:
+        elif tipo == 'Ajuste':
             registrado = produto.ajustar(quantidade)
+        else:
+            raise ValueError(f'Tipo de movimentação desconhecido: {tipo}')
 
         self.salvar()
         self.historico.registrar(
@@ -181,18 +201,17 @@ class Historico:
 
     def carregar(self):
         try:
-            with open(self.arquivo, 'r', encoding='utf-8') as arquivo:
-                dados = json.load(arquivo)
+            return [Movimentacao.from_dict(item)
+                    for item in carregar_json(self.arquivo)]
 
-        except (FileNotFoundError, json.JSONDecodeError):
+        except (KeyError, TypeError):
+            print(f'O arquivo {self.arquivo} está corrompido. '
+                  'Iniciando com o histórico vazio.')
             return []
 
-        return [Movimentacao.from_dict(item) for item in dados]
-
     def salvar(self):
-        with open(self.arquivo, 'w', encoding='utf-8') as arquivo:
-            json.dump([movimentacao.to_dict() for movimentacao in self.movimentacoes],
-                      arquivo, ensure_ascii=False, indent=4)
+        salvar_json(self.arquivo,
+                    [movimentacao.to_dict() for movimentacao in self.movimentacoes])
 
     def esta_vazio(self):
         return len(self.movimentacoes) == 0
@@ -244,7 +263,9 @@ def editar_produto(estoque):
             print('O nome não pode estar vazio.')
             return
 
-        if estoque.encontrar(novo_nome) is not None:
+        existente = estoque.encontrar(novo_nome)
+
+        if existente is not None and existente is not produto:
             print('Já existe um produto com esse nome.')
             return
 

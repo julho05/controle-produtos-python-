@@ -104,8 +104,12 @@ Toda entrada e saída fica registrada com data e hora.
 | `historico.json` | as movimentações de estoque |
 
 Os dois arquivos JSON são criados automaticamente na primeira execução. Se algum
-deles estiver corrompido ou vazio, o programa inicia com a lista vazia em vez de
-quebrar.
+deles estiver vazio, corrompido ou com um registro faltando campos, o programa
+avisa e inicia com a lista vazia em vez de quebrar.
+
+A gravação é feita primeiro num arquivo `.tmp` e só depois renomeada por cima do
+original. Um erro no meio da escrita não deixa o `produtos.json` pela metade: ou
+fica o conteúdo novo inteiro, ou o antigo intacto.
 
 ## O que este projeto me ensinou
 

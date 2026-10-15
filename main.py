@@ -1,6 +1,7 @@
 import json
 import os
 from datetime import datetime
+from uuid import uuid4
 
 ESTOQUE_MINIMO = 5
 SEM_CATEGORIA = 'Sem categoria'
@@ -25,7 +26,8 @@ def carregar_json(caminho):
 
 
 class Produto:
-    def __init__(self, nome, preco, quantidade, categoria):
+    def __init__(self, nome, preco, quantidade, categoria, id=None):
+        self.id = id or uuid4().hex[:8]
         self.nome = nome
         self.preco = preco
         self.categoria = categoria
@@ -107,6 +109,7 @@ class Produto:
 
     def to_dict(self):
         return {
+            'id': self.id,
             'nome': self.nome,
             'preco': self.preco,
             'quantidade': self.quantidade,
@@ -119,7 +122,8 @@ class Produto:
             dados['nome'],
             dados['preco'],
             dados['quantidade'],
-            dados['categoria']
+            dados['categoria'],
+            dados.get('id')
         )
 
 
@@ -127,17 +131,51 @@ class Estoque:
     def __init__(self, historico, arquivo='produtos.json'):
         self.historico = historico
         self.arquivo = arquivo
+        self.faltava_id = False
         self.produtos = self.carregar()
+        self.migrar()
 
     def carregar(self):
         try:
-            return [Produto.from_dict(item)
-                    for item in carregar_json(self.arquivo)]
+            dados = carregar_json(self.arquivo)
+            produtos = [Produto.from_dict(item) for item in dados]
+            self.faltava_id = any('id' not in item for item in dados)
 
         except (KeyError, TypeError, ValueError, AttributeError):
             print(f'O arquivo {self.arquivo} está corrompido. '
                   'Iniciando com o estoque vazio.')
             return []
+
+        return produtos
+
+    def migrar(self):
+        """Dá id aos registros gravados antes de o produto ter identidade.
+
+        As movimentações antigas só têm o nome, então são casadas por ele.
+        O que não casar com nenhum produto fica sem id e continua sendo
+        exibido pelo nome que foi gravado na época.
+        """
+        if self.faltava_id:
+            self.salvar()
+            self.faltava_id = False
+
+        orfas = [movimentacao for movimentacao in self.historico.movimentacoes
+                 if movimentacao.produto_id is None]
+
+        if not orfas:
+            return
+
+        casadas = False
+
+        for movimentacao in orfas:
+            produto = self.encontrar(movimentacao.produto)
+
+            if produto is not None:
+                movimentacao.produto_id = produto.id
+                casadas = True
+
+        if casadas:
+            self.historico.salvar()
 
     def salvar(self):
         salvar_json(self.arquivo,
@@ -152,6 +190,12 @@ class Estoque:
                 return produto
         return None
 
+    def encontrar_por_id(self, id):
+        for produto in self.produtos:
+            if produto.id == id:
+                return produto
+        return None
+
     def buscar(self, termo):
         termo = termo.strip().lower()
         return [produto for produto in self.produtos if termo in produto.nome.lower()]
@@ -162,7 +206,8 @@ class Estoque:
 
         if produto.quantidade > 0:
             self.historico.registrar(Movimentacao(
-                produto.nome, 'Entrada', produto.quantidade, produto.quantidade))
+                produto.nome, 'Entrada', produto.quantidade,
+                produto.quantidade, produto_id=produto.id))
 
     def movimentar(self, produto, tipo, quantidade):
         if tipo == 'Entrada':
@@ -176,7 +221,8 @@ class Estoque:
 
         self.salvar()
         self.historico.registrar(
-            Movimentacao(produto.nome, tipo, registrado, produto.quantidade))
+            Movimentacao(produto.nome, tipo, registrado, produto.quantidade,
+                         produto_id=produto.id))
 
     def remover(self, produto):
         self.produtos.remove(produto)
@@ -220,7 +266,9 @@ class Estoque:
 
 
 class Movimentacao:
-    def __init__(self, produto, tipo, quantidade, estoque_final, data=None):
+    def __init__(self, produto, tipo, quantidade, estoque_final, data=None,
+                 produto_id=None):
+        self.produto_id = produto_id
         self.produto = produto
         self.tipo = tipo
         self.quantidade = quantidade
@@ -236,6 +284,7 @@ class Movimentacao:
     def to_dict(self):
         return {
             'data': self.data,
+            'produto_id': self.produto_id,
             'produto': self.produto,
             'tipo': self.tipo,
             'quantidade': self.quantidade,
@@ -249,7 +298,8 @@ class Movimentacao:
             dados['tipo'],
             dados['quantidade'],
             dados['estoque_final'],
-            dados['data']
+            dados['data'],
+            dados.get('produto_id')
         )
 
 
@@ -310,8 +360,15 @@ def listar_historico(estoque):
     print('\n--------- HISTÓRICO DE MOVIMENTAÇÕES ---------')
 
     for movimentacao in historico.movimentacoes:
+        produto = estoque.encontrar_por_id(movimentacao.produto_id)
+
+        if produto is None:
+            nome = f'{movimentacao.produto} (excluído)'
+        else:
+            nome = produto.nome
+
         print(f"{movimentacao.data_formatada()} | {movimentacao.tipo:7} | "
-              f"{movimentacao.quantidade:4} un | {movimentacao.produto} "
+              f"{movimentacao.quantidade:4} un | {nome} "
               f"(ficou com {movimentacao.estoque_final})")
 
 

@@ -26,10 +26,11 @@ pip install -r requirements-dev.txt
 pytest
 ```
 
-São 85 testes, divididos em três arquivos: as regras do `Produto`, as do
-`Estoque` com arquivos temporários, e a interface de menu com o teclado
-simulado. A suíte não toca nos seus `produtos.json` e `historico.json` — cada
-teste trabalha num diretório próprio criado pelo pytest.
+São 101 testes, divididos em quatro arquivos: as regras do `Produto`, as do
+`Estoque` com arquivos temporários, a interface de menu com o teclado simulado
+e a identidade do produto no histórico. A suíte não toca nos seus
+`produtos.json` e `historico.json` — cada teste trabalha num diretório próprio
+criado pelo pytest.
 
 O que mais importa ali é a regra que o projeto promete: a soma dos movimentos de
 um produto tem que fechar com o saldo dele.
@@ -79,6 +80,23 @@ registrado como tal, com a diferença aplicada:
 ```
 29/09/2026 17:01 | Ajuste  |  -13 un | Arroz (ficou com 12)
 ```
+
+**O histórico acompanha o produto, não o nome**
+Cada produto tem um `id` gerado no cadastro, e é por ele que a movimentação
+aponta. Renomear "Arroz" para "Arroz Branco" não desliga o produto do histórico
+dele: a listagem passa a mostrar o nome novo também nos movimentos antigos.
+
+O nome gravado em cada movimentação é o que o produto se chamava naquele
+momento, e serve para quando o produto é excluído — aí o histórico continua
+mostrando esse nome, marcado como excluído:
+
+```
+29/09/2026 17:01 | Entrada |    3 un | Mochila (excluído) (ficou com 3)
+```
+
+Arquivos gravados antes dessa mudança são migrados sozinhos na primeira
+execução: os produtos ganham id e as movimentações são casadas pelo nome. O que
+não casar com nenhum produto continua aparecendo pelo nome da época.
 
 **A quantidade só muda por movimento**
 Não existe caminho para alterar a quantidade sem deixar registro. O cadastro de
@@ -156,7 +174,6 @@ requests pequenos, um assunto por vez:
 
 ## Próximos passos
 
-- Impedir que renomear um produto deixe o histórico dele órfão
 - Separar o `main.py` em módulos, quando o arquivo começar a incomodar
 - Trocar o JSON por SQLite, como exercício de SQL — hoje o JSON dá conta do
   volume, então isso vale pelo aprendizado, não por necessidade

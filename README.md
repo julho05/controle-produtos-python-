@@ -19,6 +19,21 @@ python main.py
 
 Não há dependências para instalar.
 
+## Testes
+
+```bash
+pip install -r requirements-dev.txt
+pytest
+```
+
+São 85 testes, divididos em três arquivos: as regras do `Produto`, as do
+`Estoque` com arquivos temporários, e a interface de menu com o teclado
+simulado. A suíte não toca nos seus `produtos.json` e `historico.json` — cada
+teste trabalha num diretório próprio criado pelo pytest.
+
+O que mais importa ali é a regra que o projeto promete: a soma dos movimentos de
+um produto tem que fechar com o saldo dele.
+
 ## O menu
 
 ```
@@ -113,6 +128,7 @@ sendo exibidos normalmente.
 | Arquivo | Conteúdo |
 |---|---|
 | `main.py` | todo o sistema |
+| `tests/` | a suíte de testes |
 | `produtos.json` | os produtos cadastrados |
 | `historico.json` | as movimentações de estoque |
 
@@ -141,8 +157,6 @@ requests pequenos, um assunto por vez:
 ## Próximos passos
 
 - Impedir que renomear um produto deixe o histórico dele órfão
-- Testes automatizados com pytest, começando pela regra de que a soma dos
-  movimentos fecha com o saldo
 - Separar o `main.py` em módulos, quando o arquivo começar a incomodar
 - Trocar o JSON por SQLite, como exercício de SQL — hoje o JSON dá conta do
   volume, então isso vale pelo aprendizado, não por necessidade
